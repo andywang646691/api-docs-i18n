@@ -1,0 +1,59 @@
+---
+title: 常见问题
+description: API 常见问题
+---
+import QA from '@/components/@Docs/QA.vue'
+
+## 常见问题
+
+<QA>
+  Q：链接有效期多久？
+
+  A：接口返回的链接有效期为 1 小时，请及时下载存储。
+</QA>
+
+<QA>
+  Q：任务的响应速度是多少？
+
+  A：一般在1~2s内，具体时间会受图片大小影响，但最长不超过30s，一旦超过将自动返回『超时』错误。
+</QA>
+
+<QA>
+  Q：任务的并发量（QPS）是多少?
+
+  A：目前支持的QPS默认是2。如业务扩展等需要提高 QPS，请联系商务提升QPS限制。
+</QA>
+
+<QA>
+  Q：遇到任务失败怎么办?
+
+  A：请先查看HTTP响应状态码和state的参数说明，检查是否是网络连接或者图片问题导致。或携带错误信息和task_id反馈给佐糖客服人员。
+</QA>
+
+<QA>
+  Q：异步轮询，在什么情况下终止轮询任务？
+
+  A：当任务成功(state == 1)或者失败(state &lt; 0)的时候，终止轮询。
+</QA>
+
+<QA>
+  Q：通过URL下载图片失败，或者出现 AccessDenied(如下图)，如何处理？
+  ```xml
+  This XML file does not appear to have any style information associated with it. The document tree is shown below.
+  <Error>
+    ‹Code›AccessDenied</Code›
+  ‹Message›You have no right to access this object because of bucket acl.</Message›
+‹RequestId›64227CD8051F683532C603D3</RequestId›
+<HostId›wxtechhk.oss-cn-hongkong.aliyuncs.com</HostId›
+<EC>0003-00000001</EC>
+</Error›
+```
+
+A：由于很多工具和编辑器在遇到 & 的时候，会自动将其转译成\u0026。例如下面的一段url的"Expires=1679986124\u0026OOSSAccessKeyId=" ，& 被转义为\u0026，替换回 & 即可。
+</QA>
+
+<QA>
+Q：url下载图片失败，或者出现 403 forbidden，如何处理？
+
+A：一般是由于签名过期（有效期一小时）导致，请尽快下载相应图片。可将完整url及具体错误信息发给佐糖客服人员。
+</QA>

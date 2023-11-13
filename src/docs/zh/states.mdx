@@ -1,0 +1,140 @@
+---
+title: 状态码说明
+description: 状态码说明
+---
+
+
+任务处理是否成功， 需要结合**HTTP请求响应状态码**和**任务状态码**(HTTP 响应报文中的 `state` 字段)进行判断。
+
+## 任务结果数据结构示例
+
+```
+{
+    "status": 200,
+    "data": {
+        "completed_at": 1698387307,
+        "created_at": 1698387304,
+        "image": "yourimage",
+        "processed_at": 1698387303,
+        "progress": 100,
+        "return_type": 1,
+        "state": 1, //任务状态码。1 为成功，大于 1 为处理中，小于 0 为失败。
+        "state_detail": "Complete",
+        "task_id": "5f461cfc-ec4b-446b-aa31-57afa8fb5256"
+    }
+}
+```
+
+
+## HTTP 响应状态码
+
+<table class="custom">
+  <colgroup>
+    <col style="width: 12%"/>
+    <col/>
+  </colgroup>
+  <thead>
+  <tr>
+    <th style="white-space: nowrap;">HTTP 响应状态码</th>
+    <th>说明</th>
+  </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>200</td>
+      <td>请求成功</td>
+    </tr>
+    <tr>
+      <td>400</td>
+      <td>
+        客户端参数传递错误。 请检查参数是否缺失或值是否正确
+      </td>
+    </tr>
+    <tr>
+      <td>401</td>
+      <td>认证失败。 请检查X-API-KEY是否正确或者服务是否开通</td>
+    </tr>
+    <tr>
+      <td>404</td>
+      <td>请求的URL或资源不存在。 请检查URL 或 URL中的 task id 是否正确</td>
+    </tr>
+    <tr>
+      <td>413</td>
+      <td>上传的文件超出大小限制。 请检查文件大小，参见各个服务的最大文件限制</td>
+    </tr>
+    <tr>
+      <td>429</td>
+      <td>请求频率超出QPS限制（默认QPS为2）。请放缓请求速率，或者联系商务提升QPS限制</td>
+    </tr>
+    <tr>
+      <td>500</td>
+      <td>服务端异常。请反馈给商务或技术对接人员</td>
+    </tr>
+  </tbody>
+</table>
+
+## 任务状态码
+
+任务状态码为HTTP 响应报文中的 `state` 字段，具体含义如下：
+<br/>
+<table class="custom">
+  <colgroup>
+    <col style="width: 12%"/>
+    <col/>
+  </colgroup>
+  <thead>
+  <tr>
+    <th style="white-space: nowrap;">任务状态码</th>
+    <th>说明</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td>-8</td>
+    <td>处理超时，最长处理时间30秒</td>
+  </tr>
+  <tr>
+    <td>-7</td>
+    <td>
+      无效图片文件（比如图片损坏、格式不对等）
+    </td>
+  </tr>
+  <tr>
+    <td>-5</td>
+    <td>图片超出大小（15MB）</td>
+  </tr>
+  <tr>
+    <td>-3</td>
+    <td>服务器下载图片文件失败，请检查图片URL是否可用</td>
+  </tr>
+  <tr>
+    <td>-2</td>
+    <td>任务处理完成，但任务结果上传OSS失败</td>
+  </tr>
+  <tr>
+    <td>-1</td>
+    <td>任务处理失败</td>
+  </tr>
+  <tr>
+    <td>0</td>
+    <td>任务正在队列中</td>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>任务处理完成</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>准备中</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>等待中</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>处理中</td>
+  </tr>
+  </tbody>
+</table>
+

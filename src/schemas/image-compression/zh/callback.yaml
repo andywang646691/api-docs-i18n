@@ -1,0 +1,191 @@
+
+openapi: "3.0.0"
+info:
+  title: "Image Compression API"
+  description: "Image Compression"
+  version: "1.0.0"
+servers:
+  - url: "https://techsz.aoscdn.com"
+security:
+  - APIKeyHeader: []
+paths:
+  /api/tasks/visual/imgcompress:
+    post:
+      tags:
+        - "图片压缩"
+      summary: 创建图片压缩任务
+      description: |
+        创建图片压缩任务
+
+        * 图片来源：文件上传（二进制）或从 URL 下载
+
+        消耗：每次成功调用，最长边≤4096px则消耗`1点`，4096px<最长边≤8000px则消耗`2点`。
+      parameters:
+        - in: header
+          name: X-API-KEY
+          schema:
+            type: string
+          required: true
+          description: API Key
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateTaskReqBody'
+      responses:
+        200:
+          description: 任务创建成功。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResultResponse'
+        400:
+          description: "客户端参数传递错误。 请检查参数是否缺失或值是否正确"
+        401:
+          description: "认证失败。 请检查X-API-KEY是否正确或者服务是否开通"
+        429:
+          description: "请求频率超出QPS限制（默认QPS为2）。请放缓请求速率，或者联系商务提升QPS限制"
+  #          content:
+  #            "*/*":
+  #              schema:
+  #                $ref: '#/components/schemas/RateLimit'
+
+
+components:
+  securitySchemes:
+    APIKeyHeader:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+  schemas:
+    CreateTaskReqBody:
+      type: object
+      required:
+        - callback_url
+      properties:
+        image_file:
+          type: string
+          format: binary
+          description: 源图像文件（二进制）。（如果此参数存在，则其他图像源参数必须为空）
+
+
+        image_url:
+          type: string
+          description: 源图像URL。(如果存在此参数，则其他图像源参数必须为空)
+        sync:
+          type: integer
+          enum: [ 0, 1 ]
+          default: 0
+          description: |
+            是否等待结果就绪并立即返回（默认值：0）。如果设为1，API将会等待结果准备好后立即返回。如果设为0，API将返回 task_id，稍后可通过 /{task_id} 端点获取结果。请注意，请求提交后，结果最多只会保留1个小时。
+        format:
+          type: string
+          enum: [ jpeg/jpg, png, webp ]
+          description: |
+            处理后的输出格式。若原格式为 jpeg/jpg 或 png 或 webp则保持原格式，否则返回服务器自动推荐的格式。
+        return_type:
+          type: integer
+          enum: [ 1, 2, 3 ]
+          default: 1
+          description: |
+            1 = 返回图片的下载URL。
+
+            2 = 以base64字符串形式返回图片。
+        quality:
+          type: integer
+          description: |
+            图片质量，取值范围：0 - 100, 默认为 75。(如果存在此参数，则kbyte参数必须为空)
+
+            `0~100为由强~弱的压缩程度，0最强，100最弱`
+        kbyte:
+          type: integer
+          description: |
+            指定压缩后图片大小，单位为KB，取值范围：0 - 51200。(如果存在此参数，则quality参数必须为空)
+
+            `若返回的编码格式为png，则不支持指定文件大小压缩`
+        width:
+          type: integer
+          description: |
+            压缩后图片宽度，取值范围：0 - 8000, 默认为原图宽度。若无 height 参数， 则保持图片宽高比。
+        height:
+          type: integer
+          description: |
+            压缩后图片高度，取值范围：0 - 8000, 默认为原图高度。若无 width 参数， 则保持图片宽高比。
+        callback_url:
+          type: string
+          example: ""
+          description: |
+            回调URL。如果提供，API将在任务完成时调用此URL。请注意，回调URL必须是公共可访问的URL。
+    TaskResultResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 200
+          description: |
+            Status of the request:
+            200 = Request was successful
+        message:
+          type: string
+          example: "ok"
+          description: |
+            返回的信息说明。
+
+            如果失败，可以参考此参数返回的信息，或者携带此参数寻找相应客服人员。
+        data:
+          type: object
+          properties:
+            created_at:
+              type: string
+              description: 任务创建时间戳。
+              example: "1634884056"
+            processed_at:
+              type: string
+              description: 任务开始被处理的时间戳。
+              example: "1634884056"
+            completed_at:
+              type: string
+              description: 任务完成的时间戳。
+              example: "1634884056"
+            image:
+              type: string
+              description: 结果图片的下载URL或base64数据。
+              example: "https://wxtechsz.oss-cn-shenzhen.aliyuncs.com/tasks/output/segmentation/93a5e47b-a9c1-47ac-9b5e-22cb89f7d358-image.jpg"
+            task_id:
+              type: string
+              description: 任务 ID。 如果任务失败，请携带此参数寻找相应客服人员
+              example: "94806a3f-1173-4afb-9bcc-3ff19c0981f4"
+            progress:
+              type: integer
+              description: 任务处理进度。
+              example: 100
+            state:
+              type: integer
+              description: 任务处理状态 ( -7 = 无效图片文件)
+              example: 1
+    RateLimit:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                description: Error message
+                example: Rate limit exceeded
+    AuthFailed:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                description: Error message
+                example: Missing API Key
+

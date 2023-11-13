@@ -1,0 +1,274 @@
+
+openapi: "3.0.0"
+info:
+  title: "Background Removal API"
+  description: "Remove the background of any image"
+  version: "1.0.0"
+servers:
+  - url: "https://techsz.aoscdn.com"
+security:
+  - APIKeyHeader: []
+paths:
+  /api/tasks/visual/segmentation:
+    post:
+      tags:
+        - "抠图"
+      summary: 创建抠图任务
+      description: |
+        创建抠图任务
+
+        * 图片大小: 不超过 15 MB
+        * 图片来源：文件上传（二进制）或从 URL 下载
+        * 图片内容: 任何带有前景的照片（例如人物、产品、动物、汽车等）
+
+        消耗：每次消耗`1点`
+      parameters:
+        - in: header
+          name: X-API-KEY
+          schema:
+            type: string
+          required: true
+          description: API Key
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RemoveBgMultipart'
+      responses:
+        200:
+          description: 任务创建成功。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RemoveBgTaskCreateJsonResponse'
+        400:
+          description: "客户端参数传递错误。 请检查参数是否缺失或值是否正确"
+        401:
+          description: "认证失败。 请检查X-API-KEY是否正确或者服务是否开通"
+        429:
+          description: "请求频率超出QPS限制（默认QPS为2）。请放缓请求速率，或者联系商务提升QPS限制"
+#          content:
+#            "*/*":
+#              schema:
+#                $ref: '#/components/schemas/RateLimit'
+  /api/tasks/visual/segmentation/{task_id}:
+    get:
+      tags:
+        - "抠图"
+      summary: 获取抠图结果
+      description: |
+        获取抠图结果。
+
+        Url中的参数 `task_id` 由创建抠图任务后返回。
+      parameters:
+        - in: header
+          name: X-API-KEY
+          schema:
+            type: string
+          required: true
+          description: API Key
+        - in: path
+          name: task_id
+          schema:
+            type: string
+          required: true
+          description: 抠图任务的ID
+
+      responses:
+        200:
+          description: 已删除图像背景
+          content:
+              application/json:
+                schema:
+                    $ref: '#/components/schemas/RemoveBgJsonResponse'
+
+
+components:
+  securitySchemes:
+    APIKeyHeader:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+  schemas:
+    RemoveBgMultipart:
+      type: object
+      properties:
+        image_file:
+          type: string
+          format: binary
+          description: 源图像文件（二进制）。（如果此参数存在，则其他图像源参数必须为空）
+
+
+        image_url:
+          type: string
+          description: 源图像URL。(如果存在此参数，则其他图像源参数必须为空)
+        sync:
+          type: integer
+          enum: [ 0, 1 ]
+          default: 0
+          description: |
+            是否等待结果就绪并立即返回（默认值：0）。如果设为1，API将会等待结果准备好后立即返回。如果设为0，API将返回 task_id，稍后可通过 /{task_id} 端点获取结果。请注意，请求提交后，结果最多只会保留1个小时。
+        type:
+          type: string
+          enum: [person, object, stamp]
+          default: ""
+          description: |
+            前景类型：
+
+            空 = 自动检测前景类型。
+
+            "person" = 使用人作为前景。
+
+            "object" = 使用物品作为前景。
+
+            "stamp" = 使用图章作为前景。
+        return_type:
+          type: integer
+          enum: [1, 2, 3]
+          default: 1
+          description: |
+            1 = 返回图片的下载URL。
+
+            2 = 以base64字符串形式返回图片。
+
+            3 = 以二进制流的形式返回图片（当前只支持同步接口）。
+        output_type:
+          type: integer
+          enum: [1, 2, 3]
+          default: 2
+          description: |
+            图片返回选项：
+
+            1 = 同时返回图片和蒙版。
+
+            2 = 只返回图片。（默认选项）
+
+            3 = 只返回蒙版。
+
+            图片是前景提取处理的结果，通常是彩色图片，而蒙版代表用于提取的黑白区域。
+        crop:
+          type: integer
+          enum: [0, 1]
+          description: |
+            是否裁剪至目标边缘:
+
+            0 = 返回原始图像大小。（默认选项）
+
+            1 = 裁剪至目标边缘。
+          default: 0
+        format:
+          type: string
+          enum: [png, jpg]
+          description: |
+            图片格式：
+
+            png = 透明图片（默认选项）。
+
+            jpg = 默认白色背景的非透明图片。您可以使用bg_color参数设置背景颜色。
+
+          default: "0"
+        bg_color:
+          type: string
+          example: ""
+          description: |
+            添加纯色背景。此参数仅在格式设置为jpg时生效。可以为十六进制颜色代码（例如：81d4fa，ffffff）。如果未提供，JPG的默认背景颜色为白色。
+    RemoveBgTaskCreateJsonResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 200
+          description: |
+            Status of the request:
+            200 = Request was successful
+        message:
+          type: string
+          example: "ok"
+          description: |
+            返回的信息说明。
+
+            如果失败，可以参考此参数返回的信息，或者携带此参数寻找相应客服人员。
+        data:
+          type: object
+          properties:
+            task_id:
+              type: string
+              description: 任务 ID
+              example: "94806a3f-1173-4afb-9bcc-3ff19c0981f4"
+    RemoveBgJsonResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 200
+          description: |
+            Status of the request:
+            200 = Request was successful
+        message:
+          type: string
+          example: "ok"
+          description: |
+            返回的信息说明。
+
+            如果失败，可以参考此参数返回的信息，或者携带此参数寻找相应客服人员。
+        data:
+          type: object
+          properties:
+            created_at:
+              type: string
+              description: 任务创建时间戳。
+              example: "1634884056"
+            processed_at:
+              type: string
+              description: 任务开始被处理的时间戳。
+              example: "1634884056"
+            completed_at:
+              type: string
+              description: 任务完成的时间戳。
+              example: "1634884056"
+            image:
+              type: string
+              description: 结果图片下载URL
+              example: "https://wxtechsz.oss-cn-shenzhen.aliyuncs.com/tasks/output/segmentation/93a5e47b-a9c1-47ac-9b5e-22cb89f7d358-image.jpg"
+            mask:
+              type: string
+              description: 结果 mask 下载URL
+              example: "https://wxtechsz.oss-cn-shenzhen.aliyuncs.com/tasks/output/segmentation/93a5e47b-a9c1-47ac-9b5e-22cb89f7d358-mask.jpg"
+            task_id:
+              type: string
+              description: 任务 ID。 如果任务失败，请携带此参数寻找相应客服人员
+              example: "94806a3f-1173-4afb-9bcc-3ff19c0981f4"
+            progress:
+              type: integer
+              description: 任务处理进度。
+              example: 100
+            state:
+              type: integer
+              description: 任务处理状态 ( -7 = 无效图片文件)
+              example: 1
+    RateLimit:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                description: Error message
+                example: Rate limit exceeded
+    AuthFailed:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                description: Error message
+                example: Missing API Key
+

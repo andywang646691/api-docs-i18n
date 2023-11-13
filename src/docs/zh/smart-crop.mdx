@@ -1,0 +1,56 @@
+---
+title: 图片智能切边
+description: 图片智能切边API文档 - 佐糖API
+---
+import Href from '@/components/@Docs/Href.vue'
+import CodeExamples from '@/components/@Docs/CodeExamples.astro'
+import DebugConsole from '@/components/@Docs/DebugConsoleWrapper.vue'
+import WaysButton from '@/components/@Docs/WaysButton.vue'
+import WaysTable from '@/components/@Docs/WaysTable.vue'
+import SmartCropBanner from "@/components/@Docs/SmartCropBanner.vue";
+
+<SmartCropBanner client:load></SmartCropBanner>
+
+## 注意事项
+
+- 接口返回的链接有效期为 **1 小时**，请及时下载存储。
+
+## 图片格式要求
+
+<table class="custom">
+  <colgroup>
+    <col/>
+    <col/>
+    <col/>
+  </colgroup>
+  <thead>
+  <tr>
+    <th>格式</th>
+    <th>分辨率</th>
+    <th>大小</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td>jpg, jpeg, png, bmp, gif, webp, tiff, bitmap, gif</td>
+    <td>最大 4096x4096</td>
+    <td>不超过 15MB (含 15MB)</td>
+  </tr>
+  </tbody>
+</table>
+
+## 快速开始
+
+<WaysButton client:load></WaysButton>
+
+<WaysTable></WaysTable>
+
+<CodeExamples></CodeExamples>
+
+
+## 在线调试
+
+<DebugConsole type="smart-crop" client:idle />
+
+
+

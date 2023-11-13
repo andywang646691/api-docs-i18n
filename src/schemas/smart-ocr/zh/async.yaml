@@ -1,0 +1,213 @@
+
+openapi: "3.0.0"
+info:
+  title: "Smart OCR API"
+  description: "Smart OCR"
+  version: "1.0.0"
+servers:
+  - url: "https://techsz.aoscdn.com"
+security:
+  - APIKeyHeader: []
+paths:
+  /api/tasks/document/ocr:
+    post:
+      tags:
+        - "图片OCR"
+      summary: 创建图片OCR任务
+      description: |
+        创建OCR任务
+
+        * 输入文件大小: 不超过 200 MB
+        * 输入图片文件最大分辨率为 32512 x 32512
+
+        消耗：每次消耗`1点`
+      parameters:
+        - in: header
+          name: X-API-KEY
+          schema:
+            type: string
+          required: true
+          description: API Key
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateTaskReqBody'
+      responses:
+        200:
+          description: 任务创建成功。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskCreateJsonResponse'
+        400:
+          description: "客户端参数传递错误。 请检查参数是否缺失或值是否正确"
+        401:
+          description: "认证失败。 请检查X-API-KEY是否正确或者服务是否开通"
+        429:
+          description: "请求频率超出QPS限制（默认QPS为2）。请放缓请求速率，或者联系商务提升QPS限制"
+#          content:
+#            "*/*":
+#              schema:
+#                $ref: '#/components/schemas/RateLimit'
+  /api/tasks/document/ocr/{task_id}:
+    get:
+      tags:
+        - "获取OCR结果"
+      summary: 获取OCR结果
+      description: |
+        获取OCR结果。
+
+        Url中的参数 `task_id` 由创建任务后返回。
+      parameters:
+        - in: header
+          name: X-API-KEY
+          schema:
+            type: string
+          required: true
+          description: API Key
+        - in: path
+          name: task_id
+          schema:
+            type: string
+          required: true
+          description: 任务ID
+
+      responses:
+        200:
+          description: 请求成功
+          content:
+              application/json:
+                schema:
+                    $ref: '#/components/schemas/TaskResultResponse'
+
+
+components:
+  securitySchemes:
+    APIKeyHeader:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+  schemas:
+    CreateTaskReqBody:
+      type: object
+      properties:
+        image_file:
+          type: string
+          format: binary
+          description: 源文件（二进制）。（如果此参数存在，则其他文件源参数必须为空）
+        image_url:
+          type: string
+          description: 源文件URL。请勿使用非80、443端口地址。(如果存在此参数，则其他文件源参数必须为空)
+        language:
+          type: string
+          description: |
+            输入文件语言。默认为 ChinesePRC、English和Digits。最多不超过10种语言。
+
+            多种语言用逗号分隔，名称区分大小写，比如 English,ChinesePRC,Digits
+        password:
+          type: string
+          description: |
+            文件密码。如果输入文件有密码，请在此参数中传入密码，密码最大长度为32位。
+        format:
+          type: string
+          enum: [ txt, pdf, docx, xlsx, pptx ]
+          example: txt
+          description: |
+              输出文件格式。可选值为 txt、pdf、docx、xlsx、pptx。
+    TaskCreateJsonResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 200
+          description: |
+            Status of the request:
+            200 = Request was successful
+        message:
+          type: string
+          example: "ok"
+          description: |
+            返回的信息说明。
+
+            如果失败，可以参考此参数返回的信息，或者携带此参数寻找相应客服人员。
+        data:
+          type: object
+          properties:
+            task_id:
+              type: string
+              description: 任务 ID
+              example: "94806a3f-1173-4afb-9bcc-3ff19c0981f4"
+    TaskResultResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 200
+          description: |
+            Status of the request:
+            200 = Request was successful
+        message:
+          type: string
+          example: "ok"
+          description: |
+            返回的信息说明。
+
+            如果失败，可以参考此参数返回的信息，或者携带此参数寻找相应客服人员。
+        data:
+          type: object
+          properties:
+            created_at:
+              type: string
+              description: 任务创建时间戳。
+              example: "1634884056"
+            processed_at:
+              type: string
+              description: 任务开始被处理的时间戳。
+              example: "1634884056"
+            completed_at:
+              type: string
+              description: 任务完成的时间戳。
+              example: "1634884056"
+            file:
+              type: string
+              description: 处理后文件的URL。
+              example: "https://wxtechsz.oss-cn-shenzhen.aliyuncs.com/tasks/output/xxx"
+            task_id:
+              type: string
+              description: 任务 ID。 如果任务失败，请携带此参数寻找相应客服人员
+              example: "94806a3f-1173-4afb-9bcc-3ff19c0981f4"
+            progress:
+              type: integer
+              description: 任务处理进度。
+              example: 100
+            state:
+              type: integer
+              description: 任务处理状态 ( -7 = 无效图片文件)
+              example: 1
+    RateLimit:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                description: Error message
+                example: Rate limit exceeded
+    AuthFailed:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                description: Error message
+                example: Missing API Key
+
